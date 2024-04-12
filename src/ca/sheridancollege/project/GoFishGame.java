@@ -12,91 +12,106 @@ import java.util.Scanner;
  * @author Harleen Kaur
  * @author Navdeep Kaur
  */
-public class GoFishGame extends Game{
-        private Deck deck;
-        private ArrayList<PlayerOfGoFish> players;
-    //adding players list to the game
+public class GoFishGame extends Game {
+    private Deck deck;
+    private ArrayList<PlayerOfGoFish> players;
+
     public GoFishGame(String name) {
         super(name);
         deck = new Deck(52);
         players = new ArrayList<>();
     }
-    //adding player to players list
+
     public void addPlayer(PlayerOfGoFish player) {
         players.add(player);
     }
-    //giving 4 cards to each player    
+
     @Override
     public void play() {
-    // Deal cards to players
-    for (PlayerOfGoFish player : players) {
-        for (int i = 0; i < 5; i++) {
-            player.addToHand(deck.dealCard());
-        }
-    }
-
-    // The game will end if the deck is empty and player's hand is also empty
-    boolean gameOver = false;
-    while (!gameOver) {
+        // Deal cards to players
         for (PlayerOfGoFish player : players) {
-            takeTurn(player);
-            if (deck.getSize() == 0 && player.getHand().isEmpty()) {
-                gameOver = true;
-                break;
+            for (int i = 0; i < 5; i++) {
+                player.addToHand(deck.dealCard());
             }
         }
+
+        // The game will end if the deck is empty and all players' hands are also empty
+        boolean gameOver = false;
+        while (!gameOver) {
+            for (PlayerOfGoFish player : players) {
+                takeTurn(player);
+                if (deck.getSize() == 0 && player.getHand().isEmpty()) {
+                    gameOver = true;
+                    break;
+                }
+            }
+        }
+
+        // Declare winner
+        declareWinner();
     }
 
-    // Declare winner
-    declareWinner();
-}
-    //returning the opponent
     private PlayerOfGoFish getOpponent(PlayerOfGoFish currentPlayer) {
-    for (PlayerOfGoFish player : players) {
-        if (!player.equals(currentPlayer)) {
-            return player;
+        for (PlayerOfGoFish player : players) {
+            if (!player.equals(currentPlayer)) {
+                return player;
+            }
         }
+        return null; // If no opponent is found
     }
-    return null; // If no opponent is found 
-}
-    
+
     private void takeTurn(PlayerOfGoFish player) {
     Scanner scanner = new Scanner(System.in);
 
-    // Ask opponent for a card
-    System.out.println(player.getName() + ", ask your opponent for a card (e.g., 'Do you have any Aces?'):");
-    String input = scanner.nextLine();
-
-
-    String[] parts = input.split("\\s+");
-    String askedRank = parts[parts.length - 1]; 
-
-    // Checking whether opponent has the requested card or not
-    PlayerOfGoFish opponent = getOpponent(player);
-    boolean hasRequestedCard = false;
-    for (PlayingCard card : opponent.getHand()) {
-        if (card.getRank().equalsIgnoreCase(askedRank)) {
-            player.addToHand(card);
-            opponent.getHand().remove(card);
-            hasRequestedCard = true;
+    // Choose an opponent
+    System.out.println(player.getName() + ", choose an opponent to ask (e.g., 'Player2'):");
+    String opponentName = scanner.nextLine();
+    PlayerOfGoFish opponent = null;
+    for (PlayerOfGoFish p : players) {
+        if (p.getName().equalsIgnoreCase(opponentName)) {
+            opponent = p;
             break;
         }
     }
+    if (opponent == null) {
+        System.out.println("Invalid opponent name. Please try again.");
+        return; // Skip turn if invalid opponent is chosen
+    }
 
-    // If opponent doesn't have the card, player draws from deck
+    // Ask for a card
+    System.out.println(player.getName() + ", ask your opponent for a card (e.g., 'Do you have any Aces?'):");
+    String input = scanner.nextLine();
+    String[] parts = input.split("\\s+");
+    String askedRank = parts[parts.length - 1];
+
+    // Check if opponent has the requested card
+    boolean hasRequestedCard = false;
+    ArrayList<PlayingCard> cardsToRemove = new ArrayList<>();
+    for (PlayingCard card : opponent.getHand()) {
+        if (card.getRank().equalsIgnoreCase(askedRank)) {
+            player.addToHand(card);
+            cardsToRemove.add(card);
+            hasRequestedCard = true;
+            break; // Exit loop once card is found
+        }
+    }
+    opponent.getHand().removeAll(cardsToRemove);
+
+    // Draw from deck if necessary
     if (!hasRequestedCard && deck.getSize() > 0) {
         System.out.println("Go Fish! You draw a card from the deck.");
         player.addToHand(deck.dealCard());
-    } else {
+    } else if (hasRequestedCard) {
         System.out.println("You received the card from your opponent.");
     }
 
-    // Checking for sets and then removing them from hand
+    // Check for sets
     checkForSets(player);
 }
 
+
+
     private void checkForSets(PlayerOfGoFish player) {
-        
         ArrayList<PlayingCard> hand = player.getHand();
         ArrayList<PlayingCard> setsToRemove = new ArrayList<>();
         for (int i = 0; i < hand.size(); i++) {
@@ -117,6 +132,7 @@ public class GoFishGame extends Game{
         // Remove completed sets from hand
         hand.removeAll(setsToRemove);
     }
+
     private int countSets(PlayerOfGoFish player) {
         // Count sets in player's hand
         ArrayList<PlayingCard> hand = player.getHand();
@@ -135,7 +151,6 @@ public class GoFishGame extends Game{
         return numSets;
     }
 
-
     @Override
     public void declareWinner() {
         // Count sets for each player
@@ -153,9 +168,7 @@ public class GoFishGame extends Game{
         if (maximumSets > 0) {
             System.out.println("Winner: " + winner.getName() + " has won the game with  " + maximumSets + " sets!");
         } else {
-            System.out.println("OOPs No winner found");
+            System.out.println("Oops! No winner found.");
         }
     }
 }
-
-    
